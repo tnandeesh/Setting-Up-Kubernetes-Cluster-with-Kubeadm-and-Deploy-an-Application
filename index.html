@@ -606,40 +606,40 @@ kubectl get nodes
     <hr>
 <ol>
     <li>Create deployment.yml</li>
-    <p>File Name : cbtomcat1-deployment.yml</p>
+    <p>File Name : cbtomcat2-deployment.yml</p>
 <pre>
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cbtomcat1-deployment
+  name: cbtomcat2-deployment
 spec:
   selector:
     matchLabels:
-      app: cbtomcat1
+      app: cbtomcat2
   replicas: 2 # tells deployment to run 2 pods matching the template
   template:
     metadata:
       labels:
-        app: cbtomcat1
+        app: cbtomcat2
     spec:
       containers:
-      - name: cbtomcat1
-        image: kesavkummari/cbtomcat1:1.0.0
+      - name: cbtomcat2
+        image: nandeesh10/cbtomcat2:1.1.0
         ports:
         - containerPort: 80
 </pre>
 
     <li>Create Service and Deploy:</li>
-    File Name : cbtomcat1-service.yaml</p>
+    File Name : cbtomcat2-service.yaml</p>
 <pre>
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: cbtomcat1
+  name: cbtomcat2
   namespace: default
   labels:
-    app: cbtomcat1
+    app: cbtomcat2
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
 spec:
@@ -650,21 +650,21 @@ spec:
       protocol: TCP
       targetPort: 80
   selector:
-    app: cbtomcat1
+    app: cbtomcat2
   type: LoadBalancer
 
 ...
 </pre>
 
 
-    <li>Creating a NodePort Service for cbtomcat1 Deployment:</li>
-     <pre>kubectl create service nodeport cbtomcat1 --tcp=80:80</pre>
+    <li>Creating a NodePort Service for cbtomcat2 Deployment:</li>
+     <pre>kubectl create service nodeport cbtomcat2 --tcp=80:80</pre>
 
     <li>Apply the deployment:</li>
-    <pre>kubectl apply -f cbtomcat1-deployment.yml</pre>
+    <pre>kubectl apply -f cbtomcat2-deployment.yml</pre>
 
     <li>Retrieve Deployment Information deployment.</li>
-    <pre>kubectl get deployment cbtomcat1-deployment</pre>
+    <pre>kubectl get deployment cbtomcat2-deployment</pre>
 
     <li>Get ReplicaSets</li>
     <pre>kubectl get rs</pre>
@@ -680,11 +680,11 @@ spec:
 
     <li>Once you have the NodePort, you can access the nginx-based application using the worker node's/Control plane IP address and the NodePort. Replace &lt;worker-node-ip-address&gt;/&lt;control-plane-ip-address&gt; with the actual IP address of your worker node and &lt;NodePort&gt; with the assigned port:</li>
     <code>http://&lt;worker-node-ip-address&gt;/&lt;control-plane-ip-address&gt;:<strong>&lt;NodePort&gt;</strong></code>
-    <img style="display: block; margin: 0 auto; width: 100%;" src="cbtomcat1.png" alt="cbtomcat1.png page">
+    <img style="display: block; margin: 0 auto; width: 100%;" src="cbtomcat2.png" alt="cbtomcat2.png page">
 
 
     <li>Scaling Deployment.</li>
-    <pre>kubectl scale --current-replicas=2 --replicas=3 deployment/cbtomcat1-app</pre>
+    <pre>kubectl scale --current-replicas=2 --replicas=3 deployment/cbtomcat2-app</pre>
 
     <li>Get ReplicaSets</li>
     <pre>kubectl get rs</pre>
