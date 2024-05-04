@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>Setting Up a Kubernetes Cluster with Kubeadm and Deploying an Application</title>
+
+
+    <style>
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff; /* Light Grey Color */
+}
+
+        header {
+            max-width: 1500px;
+            color: #fff;
+            padding: 20px;
+            background-color: #6495ED;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center; /* Center content horizontally */
+        }
+
+        section {
+            max-width: 1150px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(16, 16, 17, 0.1);
+        }
+
+        h2 {
+    color: #050505;
+
+    font-size: 1.0em;
+    margin-bottom: 10px;
+
+}
+
+code {
+            display: block;
+            background-color: #f4f4f4;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .or {
+            font-weight: bold;
+            margin: 0 10px; /* Adjusted margin */
+        }
+
+        pre {
+            font-family: 'Arial', monospace;
+            background-color: #f8f8f8;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+        }
+
+        p {
+            color: #0e0e0e;
+        }
+
+        ol {
+            color: #111010;
+            padding-left: 20px;
+        }
+
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+  
+
+            .lb-h1 {
+                /* Add styles for the h1 element */
+                text-align: center; /* Center-align the heading */
+            }
+
+            .center-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Optional: Adjust the height as needed */
+        }
+
+
+        body {
+                                font-family: Arial, sans-serif;
+                                margin: 20px;
+                            }
+                    
+                            li {
+                                margin-bottom: 10px;
+                            }
+                    
+                            .free-tier {
+                                background-color: #f0f8ff;
+                                padding: 10px;
+                                border-radius: 5px;
+                            }       
+    </style>
+
+
+</head>
+<body>
+    <hr>
+    <h1 style="text-align:center;">Setting Up a Kubernetes Cluster with Kubeadm and Deploy an Application</h1>
+    <hr>
+    
+
+<section>
+    <p><b>In this, we are going to cover How to Install Kubernetes Cluster on Ubuntu with kubeadm in cloud platforms like Amazon EC2 and Deploying Application to Kubernetes Cluster.</b></p>
+    <h3>We Going to Build?</h3>
+       <img style="display: block; margin: 0 auto; width: 60%;" src="k8s.webp" alt="Image Description">
+
+       <p>We will be building a k8s cluster with one control-plane(CP)<b>/</b>k8s-master node and a worker(W) node on Ubuntu.</p>
+
+    <h3>Prerequisites</h3>
+    <ul>
+        <li>2 GB or more of RAM per machine (any less will leave little room for your apps).</li>
+        <li>2 CPUs or more.</li>
+        <li>Full network connectivity between all machines in the cluster (public or private network is fine).</li>
+        <li>Unique hostname, MAC address, and product_uuid for every node.</li>
+    </ul>
+
+   <img style="display: block; margin: 0 auto; width: 100%;" src="k8s.png" alt="Hands-on Kubernetes">
+
+<!-- 
+
+ <div class="col-lg-4 col-md-4 col-sm-12">
+    <a href="k8s.png" class="page-gallery imgfix_top_container" title="Manage In One Place" style="overflow: hidden; position: relative;"><div id="imgfix_wrapper_layer_1_0" class="imgfix_wrapper_layer" style="position: relative; padding: 0; margin: 0; width: 100%; height: 100%; overflow: hidden;">
+        <img src="k8s.png" alt="k8s image" class="imgfix_src_img" style="opacity: 1;">
+    </div></a>
+</div> 
+
+ -->
+
+</section>
+
+<!-- Start of Setting Worker Node -->
+    <section>
+        <h1 style="text-align:center;">Setting up the Worker Node</h1>
+        <hr>
+        <p>First, we'll launch an EC2 instance in a chosen region using a specified subnet. Once the instance is launched, we'll establish a connection to it either via SSH or AWS Session Manager.</p>
+
+        <h3>Step 1: Set Hostname</h3>
+        <p>Setting the hostname makes it easier to identify the node within the Kubernetes cluster. Adding an entry to /etc/hosts ensures that the hostname resolves to the correct IP address.</p>
+        
+            <pre>
+hostnamectl set-hostname "k8s-node1.cloudbinary.io"
+echo "`hostname -I | awk '{ print $1}'` `hostname`" >> /etc/hosts
+            </pre>
+        
+    </section>
+    <section>
+        <h3>Step 2: Update and Install Packages</h3>
+        <p>Updating and installing necessary packages ensures that the system has the required dependencies for running Kubernetes and related tools.</p>
+        
+            <pre>
+sudo apt-get update 
+sudo apt-get install git curl unzip tree wget -y
+            </pre>
+        
+    </section>
+
+        <section>
+            <h3>Step 3: Disable Swap</h3>
+            <p>Disabling swap is important because Kubernetes requires swap to be disabled on all nodes in the cluster.</p>
+            
+                <pre>
+sudo swapoff -a
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+                </pre>
+            
+        </section>
+        <section>
+            <h3>Step 4: Load Kernel Modules</h3>
+            <p>Loading kernel modules ensures that necessary kernel modules are available for Kubernetes to function properly.</p>
+            
+                <pre>
+sudo tee /etc/modules-load.d/containerd.conf &lt;&lt;EOF
+overlay
+br_netfilter
+EOF
+    
+<span style="color: red;">
+# load kernel modules </span>
+sudo modprobe overlay
+sudo modprobe br_netfilter 
+                </pre>
+            
+        </section>
+        <section>
+            <h3>Step 5: Set Kernel Parameters</h3>
+            <p>Setting kernel parameters configures the network and other settings required by Kubernetes.</p>
+            
+                <pre>
+sudo tee /etc/sysctl.d/kubernetes.conf &lt;&lt;EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+<span style="color: red;">
+# Reload the above changes</span>
+sudo sysctl --system
+                </pre>
+
+        </section>
+
+    <section>
+        <h3>Step 6: Installing containerd</h3>
+        <p>Installing containerd provides the container runtime needed by Kubernetes.</p>
+        <pre>
+            <span style="color: red;">
+# Install containerd run time</span>
+sudo apt-get install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
+
+<span style="color: red;">
+# Enable docker repository</span>
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmour -o /etc/apt/trusted.gpg.d/docker.gpg
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+<span style="color: red;">
+# apt command to install containerd</span>
+sudo apt-get update
+sudo apt-get install -y containerd.io
+        </pre>
+    </section>
+
+    <section>
+        <h3>Step 7: Configuring containerd</h3>
+        <p>Configuring containerd ensures that it uses systemd as cgroup, which is required by Kubernetes.</p>
+        <pre>
+            <span style="color: red;">
+# Configure containerd so that it starts using systemd as cgroup.</span>
+sudo containerd config default | sudo tee /etc/containerd/config.toml >/dev/null 2>&1
+sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+
+<span style="color: red;">
+# Restart and enable containerd service</span>
+sudo systemctl restart containerd
+sudo systemctl enable containerd
+        </pre>
+    </section>
+
+    <section>
+        <h3>Step 8: Adding the Kubernetes repository</h3>
+        <p>Adding the Kubernetes repository to apt sources allows installation of Kubernetes components using apt.</p>
+        <pre>
+        <span style="color: red;">
+# Refer this page before Execution <a href="https://kubernetes.io/blog/2023/08/15/pkgs-k8s-io-introduction/" target="_blank">https://kubernetes.io/blog/2023/08/15/pkgs-k8s-io-introduction/</a>
+
+# Add apt repository for Kubernetes</span>
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo apt-get update
+    </pre>
+    </section>
+
+    <section>
+        <h3>Step 9: Installing Kubernetes Components</h3>
+        <p>Installing Kubernetes components (kubelet, kubeadm, kubectl) provides the necessary tools for managing the Kubernetes cluster.</p>
+        <pre>
+            <span style="color: red;">
+# Install Kubernetes components</span>
+sudo apt-get install -y kubelet kubeadm kubectl
+        </pre>
+    </section>
+
+    <section>
+        <h3>Step 10: Holding Kubernetes Packages</h3>
+        <p>Holding Kubernetes packages prevents them from being upgraded automatically, ensuring stability of the cluster.</p>
+        <pre>
+            <span style="color: red;">
+# Prevent automatic upgrades for stability</span>
+sudo apt-mark hold kubelet kubeadm kubectl
+        </pre>
+    </section>
+
+    <section>
+        <h3>Step 14: Checking Kubernetes Component Versions</h3>
+        <p>Checking the versions of kubelet, kubeadm, and kubectl ensures that the correct versions are in use for the Kubernetes cluster setup.</p>
+        <pre>
+            <span style="color: red;">
+# Verify the version</span>
+kubelet --version
+kubeadm version
+kubectl version
+        </pre>
+    </section>
+<!-- END of Setting Worker Node -->
+
+<!-- Start of Setting control-plane(CP) -->
+<section>
+    <h1 style="text-align:center;">Setting up the Control Plane (CP)</h1>
+    <hr>
+    <p>First, we'll launch an EC2 instance in a chosen region using a specified subnet. Once the instance is launched, we'll establish a connection to it either via SSH or AWS Session Manager.</p>
+
+    <h3>Step 1: Set Hostname</h3>
+    <p>Setting the hostname makes it easier to identify the node within the Kubernetes cluster. Adding an entry to /etc/hosts ensures that the hostname resolves to the correct IP address.</p>
+    
+        <pre>
+hostnamectl set-hostname "k8s-node1.cloudbinary.io"
+echo "`hostname -I | awk '{ print $1}'` `hostname`" >> /etc/hosts
+        </pre>
+    
+</section>
+<section>
+    <h3>Step 2: Update and Install Packages</h3>
+    <p>Updating and installing necessary packages ensures that the system has the required dependencies for running Kubernetes and related tools.</p>
+    
+        <pre>
+sudo apt-get update 
+sudo apt-get install git curl unzip tree wget -y
+        </pre>
+    
+</section>
+
+    <section>
+        <h3>Step 3: Disable Swap</h3>
+        <p>Disabling swap is important because Kubernetes requires swap to be disabled on all nodes in the cluster.</p>
+        
+            <pre>
+sudo swapoff -a
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+            </pre>
+        
+    </section>
+    <section>
+        <h3>Step 4: Load Kernel Modules</h3>
+        <p>Loading kernel modules ensures that necessary kernel modules are available for Kubernetes to function properly.</p>
+        
+            <pre>
+sudo tee /etc/modules-load.d/containerd.conf &lt;&lt;EOF
+overlay
+br_netfilter
+EOF
+
+<span style="color: red;">
+# load kernel modules </span>
+sudo modprobe overlay
+sudo modprobe br_netfilter 
+            </pre>
+        
+    </section>
+    <section>
+        <h3>Step 5: Set Kernel Parameters</h3>
+        <p>Setting kernel parameters configures the network and other settings required by Kubernetes.</p>
+        
+            <pre>
+sudo tee /etc/sysctl.d/kubernetes.conf &lt;&lt;EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+<span style="color: red;">
+# Reload the above changes</span>
+sudo sysctl --system
+            </pre>
+
+    </section>
+
+<section>
+    <h3>Step 6: Installing containerd</h3>
+    <p>Installing containerd provides the container runtime needed by Kubernetes.</p>
+    <pre>
+        <span style="color: red;">
+# Install containerd run time</span>
+sudo apt-get install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
+
+<span style="color: red;">
+# Enable docker repository</span>
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmour -o /etc/apt/trusted.gpg.d/docker.gpg
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+<span style="color: red;">
+# apt command to install containerd</span>
+sudo apt-get update
+sudo apt-get install -y containerd.io
+    </pre>
+</section>
+
+<section>
+    <h3>Step 7: Configuring containerd</h3>
+    <p>Configuring containerd ensures that it uses systemd as cgroup, which is required by Kubernetes.</p>
+    <pre>
+        <span style="color: red;">
+# Configure containerd so that it starts using systemd as cgroup.</span>
+sudo containerd config default | sudo tee /etc/containerd/config.toml >/dev/null 2>&1
+sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+
+<span style="color: red;">
+# Restart and enable containerd service</span>
+sudo systemctl restart containerd
+sudo systemctl enable containerd
+    </pre>
+</section>
+
+<section>
+    <h3>Step 8: Adding the Kubernetes repository</h3>
+    <p>Adding the Kubernetes repository to apt sources allows installation of Kubernetes components using apt.</p>
+    <pre>
+        <span style="color: red;">
+# Refer this page before Execution <a href="https://kubernetes.io/blog/2023/08/15/pkgs-k8s-io-introduction/" target="_blank">https://kubernetes.io/blog/2023/08/15/pkgs-k8s-io-introduction/</a>
+
+# Add apt repository for Kubernetes</span>
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo apt-get update
+    </pre>
+</section>
+
+<section>
+    <h3>Step 9: Installing Kubernetes Components</h3>
+    <p>Installing Kubernetes components (kubelet, kubeadm, kubectl) provides the necessary tools for managing the Kubernetes cluster.</p>
+    <pre>
+        <span style="color: red;">
+# Install Kubernetes components</span>
+sudo apt-get install -y kubelet kubeadm kubectl
+    </pre>
+</section>
+
+<section>
+    <h3>Step 10: Holding Kubernetes Packages</h3>
+    <p>Holding Kubernetes packages prevents them from being upgraded automatically, ensuring stability of the cluster.</p>
+    <pre>
+        <span style="color: red;">
+# Prevent automatic upgrades for stability</span>
+sudo apt-mark hold kubelet kubeadm kubectl
+    </pre>
+</section>
+
+<section>
+    <h3>Step 11: Checking Kubernetes Component Versions</h3>
+    <p>Checking the versions of kubelet, kubeadm, and kubectl ensures that the correct versions are in use for the Kubernetes cluster setup.</p>
+    <pre>
+        <span style="color: red;">
+# Verify the version</span>
+kubelet --version
+kubeadm version
+kubectl version
+    </pre>
+</section>
+
+<section>
+    <h3>Step 12: Setting KUBECONFIG</h3>
+    <p>Exporting Kubernetes configuration to system environment for administrative access.</p>
+    <pre>export KUBECONFIG=/etc/kubernetes/admin.conf</pre>
+</section>
+
+
+<section>
+    <h3>Step 13: Initializing the Kubernetes cluster sets up the control plane and prepares the node to join the cluster.</h3>
+    <pre>
+        <span style="color: red;">
+# Initialize Kubernetes cluster with Kubeadm command</span>
+su - ubuntu
+id
+pwd
+cd
+sudo kubeadm init --control-plane-endpoint=k8s-cp.cloudbinary.io >> /home/ubuntu/k8s-cluster.output
+</pre>
+
+<span style="color: red;">
+<b>Note : After Executing this command need to copy down the output for feature purpose.</b></span>
+   
+
+    <p><b>At the end of the command output, you will see something like the following this will be important.</b></p>
+    
+       <img style="display: block; margin: 0 auto; width: 100%;" src="output-k8s-cp.png" alt="output-k8s-cp Description">
+</section>
+
+
+<section>
+    <h3>Step 14: Setting up kubeconfig allows the user to interact with the Kubernetes cluster using kubectl.</h3>
+    <pre>
+        <span style="color: red;">
+# Setting up kubeconfig</span>
+su - ubuntu
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    </pre>
+</section>
+
+<section>
+    <h3>Step 15: Installing the Calico network add-on provides networking capabilities to pods running on the Kubernetes cluster.</h3>
+    <pre>
+        <span style="color: red;">
+# Installing Calico network add-on</span>
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/calico.yaml
+    </pre>
+
+</section>
+
+<section>
+    <h3>Step 16: Kubernetes cluster information.</h3>
+    <p>To Check cluster and network is Ready.</p>
+<pre><span style="color: red;">
+# Check cluster-info</span>
+kubectl cluster-info</pre>
+<img style="display: block; margin: 0 auto; width: 100%;" src="cluster-info.png" alt="cluster-info image">
+
+<p>To check network.</p>
+    <pre><span style="color: red;">
+# Check network</span>
+kubectl get svc</pre>
+<img style="display: block; margin: 0 auto; width: 100%;" src="get-svc.png" alt="get-svc image">
+
+
+</section>
+
+<section>
+        <h3>Step 17: Join any number of worker nodes by running.</h3>
+        <ul>
+            <li>Before executing this command, you should exchange the hostname and IP address of both instances. It should look like this.</li>
+            <li>File path for control-plane /etc/hosts (open in vi editer command is vi /etc/hosts)</li>
+            <img style="display: block; margin: 0 auto; width: 80%;" src="host-k8s-cp.png" alt="host-k8s-cp image">
+
+        </ul>
+
+        <ul>
+            <li>File path for worker-node /etc/hosts (open in vi editer command is vi /etc/hosts)</li>
+            <img style="display: block; margin: 0 auto; width: 80%;" src="host-k8s-node1.png" alt="host-k8s-cp image">
+        </ul>
+        
+        <p>You should run this command on the worker node EC2 instance to join the cluster.</p>
+        <pre>
+sudo kubeadm join 192.168.0.100:6443 --token abcdef.1234567890abcdef --discovery-token-ca-cert-hash sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        </pre>
+        <img style="display: block; margin: 0 auto; width: 100%;" src="join-node-to-cluster.png" alt="join-node-to-cluster image">
+
+    
+    <p>Switch back to the control-plane node and run the below command to verify.</p>
+        
+<pre><span style="color: red;">
+# To See node Joined the Cluster.</span>
+kubectl get nodes
+        </pre>  
+
+        <img style="display: block; margin: 0 auto; width: 100%;" src="get-nodes.png" alt="get-nodes image">
+
+        <p>These steps collectively set up a Kubernetes cluster and Joined the nodes on the Ubuntu machine. Now it is ready for use in a production environment.</p>
+
+</section>
+<!-- END Setting control-plane(CP) -->
+
+<!-- Start of Deploying Nginx Application on Kubernetes -->
+<section>
+  <h1 style="text-align:center;">Deploying Nginx Application on Kubernetes Cluster</h1>
+  <hr>
+  <ol>
+    <li>First, deploy the nginx application with two replicas:</li>
+    <pre>kubectl create deployment nginx-app --image=nginx --replicas=2</pre>
+    <img style="display: block; margin: 0 auto; width: 100%;" src="deploy-nginx-application.png" alt="deploy-nginx-application image">
+
+    <li>Check the status of the nginx-app deployment:</li>
+    <pre>kubectl get deployment nginx-app</pre>
+    <img style="display: block; margin: 0 auto; width: 100%; margin: 0 auto; width: 100%;" src="status-nginx.png" alt="status-nginx image">
+
+    <li>To get the status of all pods:</li>
+    <pre>kubectl get pods</pre>
+    <img style="display: block; margin: 0 auto; width: 100%;" src="get-pods.png" alt="get-pods image">
+
+    <li>Expose the deployment as a NodePort service on port 80:</li>
+    <pre>kubectl expose deployment nginx-app --type=NodePort --port=80</pre>
+    <img style="display: block; margin: 0 auto; width: 100%;" src="expose-nginx.png" alt="expose-nginx image">
+
+    <li>View the service status to get the NodePort assigned:</li>
+    <pre>kubectl get svc nginx-app</pre>
+    <img style="display: block; margin: 0 auto; width: 100%;" src="get-svc-nginx.png" alt="get-svc-nginx image">
+
+    <li>Once you have the NodePort, you can access the nginx-based application using the worker node's/Control plane IP address and the NodePort. Replace &lt;worker-node-ip-address&gt;/&lt;control-plane-ip-address&gt; with the actual IP address of your worker node and &lt;NodePort&gt; with the assigned port:</li>
+    <code>http://&lt;worker-node-ip-address&gt;/&lt;control-plane-ip-address&gt;:<strong>&lt;NodePort&gt;</strong></code>
+    <img style="display: block; margin: 0 auto; width: 100%;" src="welcome-nginx.png" alt="welcome-nginx page">
+
+    <li>To delete deployment:</li>
+    <pre>kubectl delete deployment nginx-app</pre>
+
+    <li>To delete service:</li>
+    <pre>kubectl delete svc nginx-app</pre>
+
+  </ol>
+</section>
+<!-- END of Deploying Nginx Application on Kubernetes -->
+
+<!-- Start of Deploy a an artifact on Kubernetes-->
+
+<section>
+
+    <h1 style="text-align:center;">Deploy an artifact on Kubernetes Cluster</h1>
+    <hr>
+<ol>
+    <li>Create deployment.yml</li>
+    <p>File Name : cbtomcat1-deployment.yml</p>
+<pre>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cbtomcat1-deployment
+spec:
+  selector:
+    matchLabels:
+      app: cbtomcat1
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: cbtomcat1
+    spec:
+      containers:
+      - name: cbtomcat1
+        image: kesavkummari/cbtomcat1:1.0.0
+        ports:
+        - containerPort: 80
+</pre>
+
+    <li>Create Service and Deploy:</li>
+    File Name : cbtomcat1-service.yaml</p>
+<pre>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cbtomcat1
+  namespace: default
+  labels:
+    app: cbtomcat1
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  externalTrafficPolicy: Local
+  ports:
+    - name: http 
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: cbtomcat1
+  type: LoadBalancer
+
+...
+</pre>
+
+
+    <li>Creating a NodePort Service for cbtomcat1 Deployment:</li>
+     <pre>kubectl create service nodeport cbtomcat1 --tcp=80:80</pre>
+
+    <li>Apply the deployment:</li>
+    <pre>kubectl apply -f cbtomcat1-deployment.yml</pre>
+
+    <li>Retrieve Deployment Information deployment.</li>
+    <pre>kubectl get deployment cbtomcat1-deployment</pre>
+
+    <li>Get ReplicaSets</li>
+    <pre>kubectl get rs</pre>
+
+    <li>Get deployment information.</li>
+    <pre>kubectl get pods</pre>
+
+    <li>Check Service.</li>
+    <pre>kubectl get svc</pre>
+
+    <li>Check nodes.</li>
+    <pre>kubectl get nodes</pre>
+
+    <li>Once you have the NodePort, you can access the nginx-based application using the worker node's/Control plane IP address and the NodePort. Replace &lt;worker-node-ip-address&gt;/&lt;control-plane-ip-address&gt; with the actual IP address of your worker node and &lt;NodePort&gt; with the assigned port:</li>
+    <code>http://&lt;worker-node-ip-address&gt;/&lt;control-plane-ip-address&gt;:<strong>&lt;NodePort&gt;</strong></code>
+    <img style="display: block; margin: 0 auto; width: 100%;" src="cbtomcat1.png" alt="cbtomcat1.png page">
+
+
+    <li>Scaling Deployment.</li>
+    <pre>kubectl scale --current-replicas=2 --replicas=3 deployment/cbtomcat1-app</pre>
+
+    <li>Get ReplicaSets</li>
+    <pre>kubectl get rs</pre>
+
+    <li>Get deployment information.</li>
+    <pre>kubectl get pods</pre>
+</ol>
+
+<p>"Application deployment in Kubernetes completed successfully and All resources are now provisioned and operational. You can now scale up the replicas as needed."</p>
+
+<!-- END of Deploy a an artifact on Kubernetes -->
+
+</section>
+</body>
+</html>
+
+
+
+
+
+
+    
