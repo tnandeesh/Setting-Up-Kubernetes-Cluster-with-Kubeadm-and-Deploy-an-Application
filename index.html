@@ -28,15 +28,47 @@ body {
         }
 
         section {
-            max-width: 1150px;
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.4s ease;
-        }
+    max-width: 1150px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.4s ease;
+    overflow: hidden; /* Ensure content stays within the section */
+}
+
+.col-lg-4, .col-md-4, .col-sm-12 {
+    box-sizing: border-box;
+    padding: 10px;
+}
+
+.page-gallery {
+    display: block;
+    width: 100%;
+}
+
+.imgfix_top_container {
+    overflow: hidden;
+    position: relative;
+}
+
+.imgfix_wrapper_layer {
+    position: relative;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.imgfix_src_img {
+    width: 100%; /* Ensure the image scales to the container */
+    height: auto; /* Maintain aspect ratio */
+    display: block;
+}
+
 
         h2 {
     color: #050505;
@@ -138,9 +170,9 @@ code {
         <li>Unique hostname, MAC address, and product_uuid for every node.</li>
     </ul>
 
-   <img style="display: block; margin: 0 auto; width: 100%;" src="k8s.png" alt="Hands-on Kubernetes">
+  <!--  <img style="display: block; margin: 0 auto; width: 100%;" src="k8s.png" alt="Hands-on Kubernetes"> -->
 
-<!-- 
+
 
  <div class="col-lg-4 col-md-4 col-sm-12">
     <a href="k8s.png" class="page-gallery imgfix_top_container" title="Manage In One Place" style="overflow: hidden; position: relative;"><div id="imgfix_wrapper_layer_1_0" class="imgfix_wrapper_layer" style="position: relative; padding: 0; margin: 0; width: 100%; height: 100%; overflow: hidden;">
@@ -148,7 +180,7 @@ code {
     </div></a>
 </div> 
 
- -->
+
 
 </section>
 
