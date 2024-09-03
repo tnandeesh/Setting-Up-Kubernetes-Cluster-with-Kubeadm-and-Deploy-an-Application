@@ -518,22 +518,12 @@ kubectl version
     </pre>
 </section>
 
-<section>
-    <h3>Step 12: Setting KUBECONFIG</h3>
-    <p>Exporting Kubernetes configuration to system environment for administrative access.</p>
-    <pre>export KUBECONFIG=/etc/kubernetes/admin.conf</pre>
-</section>
-
 
 <section>
-    <h3>Step 13: Initializing the Kubernetes cluster sets up the control plane and prepares the node to join the cluster.</h3>
+    <h3>Step 12: Initializing the Kubernetes cluster sets up the control plane and prepares the node to join the cluster.</h3>
     <pre>
         <span style="color: red;">
-# Initialize Kubernetes cluster with Kubeadm command</span>
-su - ubuntu
-id
-pwd
-cd
+# Initialize Kubernetes cluster with Kubeadm command as Root User</span>
 sudo kubeadm init --control-plane-endpoint=k8s-cp.github.io >> /home/ubuntu/k8s-cluster.output
 </pre>
 
@@ -541,22 +531,36 @@ sudo kubeadm init --control-plane-endpoint=k8s-cp.github.io >> /home/ubuntu/k8s-
 <b>Note : After Executing this command need to copy down the output for feature purpose.</b></span>
    
 
-    <p><b>At the end of the command output, you will see something like the following this will be important.</b></p>
+    <p><b>At the end of the command output, you will see something like this which will be important.</b></p>
     
        <img style="display: block; margin: 0 auto; width: 100%;" src="output-k8s-cp.png" alt="output-k8s-cp Description">
 </section>
 
 
 <section>
-    <h3>Step 14: Setting up kubeconfig allows the user to interact with the Kubernetes cluster using kubectl.</h3>
+    <h3>Step 13: Setting up kubeconfig allows the user to interact with the Kubernetes cluster using kubectl.</h3>
     <pre>
         <span style="color: red;">
 # Setting up kubeconfig</span>
 su - ubuntu
+id
+pwd
+cd
+
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
     </pre>
+</section>
+
+<section>
+    <h3>Step 14: Setting KUBECONFIG</h3>
+    <p>Exporting Kubernetes configuration to system environment for administrative access.</p>
+    <pre>
+<span style="color: red;">#Alternatively, if you are the root user, you can run:</span>
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+echo $KUBECONFIG</pre>
 </section>
 
 <section>
