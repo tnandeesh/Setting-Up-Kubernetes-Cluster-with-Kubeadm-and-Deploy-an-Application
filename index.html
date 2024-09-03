@@ -300,9 +300,8 @@ sudo containerd config default | sudo tee /etc/containerd/config.toml >/dev/null
 sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
 
 <span style="color: red;">
-# Restart and enable containerd service</span>
-sudo systemctl restart containerd
-sudo systemctl enable containerd
+# check the status containerd service</span>
+sudo systemctl status containerd
         </pre>
     </section>
 
@@ -457,9 +456,8 @@ sudo containerd config default | sudo tee /etc/containerd/config.toml >/dev/null
 sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
 
 <span style="color: red;">
-# Restart and enable containerd service</span>
-sudo systemctl restart containerd
-sudo systemctl enable containerd
+# check the status containerd service</span>
+sudo systemctl status containerd
     </pre>
 </section>
 
